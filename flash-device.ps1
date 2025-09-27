@@ -21,18 +21,16 @@ while ($true) {
             Write-Host "/dev/mmcblk2 found. Proceeding with flashing..."
             
             # Step 2: Upload the file
-            scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .\singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-ext4-sdcard.img.gz root@${targetIp}:/tmp/
+            scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .\singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-sdcard.img.gz root@${targetIp}:/tmp/
             
             # Step 3: Write to the device and reboot
-            $flashCommand = "gunzip -c /tmp/singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-ext4-sdcard.img.gz | dd of=/dev/mmcblk2 bs=4M && reboot"
+            $flashCommand = "gunzip -c /tmp/singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-sdcard.img.gz | dd of=/dev/mmcblk2 bs=4M && reboot"
             ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${targetIp} $flashCommand
             
             # Step 4: Show success message and wait for user confirmation
             Write-Host "Flashing command sent. Waiting for user confirmation..."
             Add-Type -AssemblyName System.Windows.Forms
             [System.Windows.Forms.MessageBox]::Show('Flashing command sent successfully!', 'Success', 'OK', 'Information')
-            Write-Host "Press any key to continue to the disconnection phase..."
-            $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
 
         } else {
             Write-Host "CRITICAL: Target device /dev/mmcblk2 not found on the remote host. Aborting flash."
