@@ -1,5 +1,5 @@
 while ($true) {
-    $targetIp = "192.168.222.1"
+    $targetIp = "192.168.223.1"
     Write-Host "Searching for device at $targetIp..."
 
     $tcpClient = New-Object System.Net.Sockets.TcpClient
@@ -11,35 +11,19 @@ while ($true) {
         $tcpClient.EndConnect($connect) | Out-Null
         $tcpClient.Close()
         
-        Write-Host "Device found at $targetIp. Checking device integrity..."
-
-        # Step 1: Check if the target block device exists on the remote device
-        $checkCommand = "if [ -b /dev/mmcblk2 ]; then echo 'exists'; else echo 'not_found'; fi"
-        $checkResult = ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${targetIp} $checkCommand
-
-        if ($checkResult -match "exists") {
-            Write-Host "/dev/mmcblk2 found. Proceeding with flashing..."
-            
-            # Step 2: Upload the file
-            scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .\singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-sdcard.img.gz root@${targetIp}:/tmp/
-            
-            # Step 3: Write to the device and reboot
-            $flashCommand = "gunzip -c /tmp/singleflight-24.10.2-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-sdcard.img.gz | dd of=/dev/mmcblk2 bs=4M && reboot"
-            ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${targetIp} $flashCommand
-            
-            # Step 4: Show success message and wait for user confirmation
-            Write-Host "Flashing command sent. Waiting for user confirmation..."
-            Add-Type -AssemblyName System.Windows.Forms
-            [System.Windows.Forms.MessageBox]::Show('Flashing command sent successfully!', 'Success', 'OK', 'Information')
-
-        } else {
-            Write-Host "CRITICAL: Target device /dev/mmcblk2 not found on the remote host. Aborting flash."
-            # Display a pop-up message box on Windows using only English characters
-            Add-Type -AssemblyName System.Windows.Forms
-            $message = 'CRITICAL: Target device /dev/mmcblk2 not found! Flashing operation aborted.'
-            $caption = 'Flashing Error'
-            [System.Windows.Forms.MessageBox]::Show($message, $caption, 'OK', 'Error')
-        }
+        Write-Host "Device found at $targetIp. Proceeding with flashing..."
+        
+        # Step 1: Upload the file
+        scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null .\openwrt-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-factory.bin root@${targetIp}:/tmp/
+        
+        # Step 2: Write to the device and reboot
+        $flashCommand = "mtd write /tmp/openwrt-sunxi-cortexa7-friendlyarm_nanopi-neo-air-squashfs-factory.bin /dev/mtd0 && reboot"
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${targetIp} $flashCommand
+        
+        # Step 3: Show success message and wait for user confirmation
+        Write-Host "Flashing command sent. Waiting for user confirmation..."
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show('Flashing command sent successfully!', 'Success', 'OK', 'Information')
         
         Write-Host "Commands sent to the device. Waiting for it to disconnect..."
         
